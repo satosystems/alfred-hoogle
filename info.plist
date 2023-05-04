@@ -8,11 +8,11 @@
 	<string>Tools</string>
 	<key>connections</key>
 	<dict>
-		<key>E7DA0495-C347-453C-994D-AE8BF97654C0</key>
+		<key>63F60794-BB56-4415-9372-BAF974C3A7E1</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>D9BB82C1-DF1B-4C45-BE40-0A2EF4087E1B</string>
+				<string>D5964E5C-CA17-4736-B5C2-7F3C1FDB0E10</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -25,34 +25,13 @@
 	<key>createdby</key>
 	<string>Satoshi Ogata</string>
 	<key>description</key>
-	<string>Search about Haskell by Hoogle</string>
+	<string>Get in-line Hoogle search suggestions</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
 	<string>Hoogle</string>
 	<key>objects</key>
 	<array>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>argumenttype</key>
-				<integer>1</integer>
-				<key>keyword</key>
-				<string>hoogle</string>
-				<key>subtext</key>
-				<string>hogehoge</string>
-				<key>text</key>
-				<string>Hoogle</string>
-				<key>withspace</key>
-				<true/>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.input.keyword</string>
-			<key>uid</key>
-			<string>E7DA0495-C347-453C-994D-AE8BF97654C0</string>
-			<key>version</key>
-			<integer>1</integer>
-		</dict>
 		<dict>
 			<key>config</key>
 			<dict>
@@ -65,37 +44,189 @@
 				<key>spaces</key>
 				<string></string>
 				<key>url</key>
-				<string>https://hoogle.haskell.org/?hoogle={query}</string>
+				<string>{query}</string>
 			</dict>
 			<key>type</key>
 			<string>alfred.workflow.action.openurl</string>
 			<key>uid</key>
-			<string>D9BB82C1-DF1B-4C45-BE40-0A2EF4087E1B</string>
+			<string>D5964E5C-CA17-4736-B5C2-7F3C1FDB0E10</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<true/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>keyword</key>
+				<string>{var:search_keyword}</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>2</integer>
+				<key>runningsubtext</key>
+				<string>Querying suggestions…</string>
+				<key>script</key>
+				<string>function run(argv) {
+  function makeItems(results) {
+    return results.map((result) =&gt; {
+      return {
+        uid: result.subtitle,
+        title: result.name,
+        subtitle: result.subtitle,
+        arg: result.subtitle,
+      }
+    })
+  }
+
+  function argvToResults(argv) {
+    const name = argv.join(' ')
+    const query = name.replaceAll(' ', '%20')
+    return [
+      {
+        name: name,
+        subtitle: `https://hoogle.haskell.org/?hoogle=${query}`,
+      },
+    ]
+  }
+
+  const oldArgv =
+    $.NSProcessInfo.processInfo.environment.objectForKey('oldArgv').js
+  const newArgv = JSON.stringify(argv)
+
+  if (newArgv === oldArgv) {
+    const oldResults =
+      $.NSProcessInfo.processInfo.environment.objectForKey('oldResults').js
+    return JSON.stringify({
+      rerun: 0.1,
+      skipknowledge: true,
+      variables: { oldResults: oldResults, oldArgv: oldArgv },
+      items: makeItems(argvToResults(argv).concat(JSON.parse(oldResults))),
+    })
+  }
+
+  const encodedQuery = encodeURIComponent(argv[0])
+  const queryURL = $.NSURL.URLWithString(
+    `http://www.haskell.org/hoogle/?mode=json&amp;hoogle=${encodedQuery}`
+  )
+  const response = $.NSData.dataWithContentsOfURL(queryURL)
+  const responseString = $.NSString.alloc.initWithDataEncoding(
+    response,
+    $.NSUTF8StringEncoding
+  ).js
+  const newResults = JSON.parse(responseString).map((entry) =&gt; {
+    const entityReference = {
+      '&amp;quot;': '"',
+      '&amp;amp;': '&amp;',
+      '&amp;apos;': "'",
+      '&amp;lt;': '&lt;',
+      '&amp;gt;': '&gt;',
+    }
+
+    return {
+      name: Object.keys(entityReference).reduce(
+        (acc, cur) =&gt; acc.replaceAll(cur, entityReference[cur]),
+        entry.item.replace(/(&lt;([^&gt;]+)&gt;)/gi, '')
+      ),
+      subtitle: entry.url,
+    }
+  })
+
+  return JSON.stringify({
+    skipknowledge: true,
+    variables: { oldResults: JSON.stringify(newResults), oldArgv: newArgv },
+    items: makeItems(argvToResults(argv).concat(newResults)),
+  })
+}
+</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>Search Hoogle with suggestions</string>
+				<key>title</key>
+				<string>Search Hoogle</string>
+				<key>type</key>
+				<integer>7</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>63F60794-BB56-4415-9372-BAF974C3A7E1</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
 	</array>
 	<key>readme</key>
-	<string></string>
+	<string>## Usage
+
+Get in-line suggestions from Hoogle’s search results via the `hoogle` keyword ([configurable](https://www.alfredapp.com/help/workflows/user-configuration/)). Press &lt;kbd&gt;↩&lt;/kbd&gt; to open the search results page in the default web browser.
+
+![Hoogle in-line results](images/about/hoogle-search-results.png)</string>
 	<key>uidata</key>
 	<dict>
-		<key>D9BB82C1-DF1B-4C45-BE40-0A2EF4087E1B</key>
+		<key>63F60794-BB56-4415-9372-BAF974C3A7E1</key>
 		<dict>
+			<key>note</key>
+			<string>Set your keyword via the "Configure workflow..." button.</string>
 			<key>xpos</key>
-			<real>315</real>
+			<real>45</real>
 			<key>ypos</key>
-			<real>110</real>
+			<real>40</real>
 		</dict>
-		<key>E7DA0495-C347-453C-994D-AE8BF97654C0</key>
+		<key>D5964E5C-CA17-4736-B5C2-7F3C1FDB0E10</key>
 		<dict>
 			<key>xpos</key>
-			<real>65</real>
+			<real>280</real>
 			<key>ypos</key>
-			<real>110</real>
+			<real>40</real>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>hoogle</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string></string>
+			<key>label</key>
+			<string>Search Keyword</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>search_keyword</string>
+		</dict>
+	</array>
+	<key>variablesdontexport</key>
 	<array/>
+	<key>version</key>
+	<string>2.0.0</string>
 	<key>webaddress</key>
 	<string>https://github.com/satosystems/alfred-hoogle</string>
 </dict>
