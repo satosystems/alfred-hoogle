@@ -81,77 +81,7 @@
 				<key>runningsubtext</key>
 				<string>Querying suggestions…</string>
 				<key>script</key>
-				<string>function run(argv) {
-  function makeItems(results) {
-    return results.map((result) =&gt; {
-      return {
-        uid: result.subtitle,
-        title: result.name,
-        subtitle: result.subtitle,
-        arg: result.subtitle,
-      }
-    })
-  }
-
-  function argvToResults(argv) {
-    const name = argv.join(' ')
-    const query = name.replaceAll(' ', '%20')
-    return [
-      {
-        name: name,
-        subtitle: `https://hoogle.haskell.org/?hoogle=${query}`,
-      },
-    ]
-  }
-
-  const oldArgv =
-    $.NSProcessInfo.processInfo.environment.objectForKey('oldArgv').js
-  const newArgv = JSON.stringify(argv)
-
-  if (newArgv === oldArgv) {
-    const oldResults =
-      $.NSProcessInfo.processInfo.environment.objectForKey('oldResults').js
-    return JSON.stringify({
-      rerun: 0.1,
-      skipknowledge: true,
-      variables: { oldResults: oldResults, oldArgv: oldArgv },
-      items: makeItems(argvToResults(argv).concat(JSON.parse(oldResults))),
-    })
-  }
-
-  const encodedQuery = encodeURIComponent(argv[0])
-  const queryURL = $.NSURL.URLWithString(
-    `http://www.haskell.org/hoogle/?mode=json&amp;hoogle=${encodedQuery}`
-  )
-  const response = $.NSData.dataWithContentsOfURL(queryURL)
-  const responseString = $.NSString.alloc.initWithDataEncoding(
-    response,
-    $.NSUTF8StringEncoding
-  ).js
-  const newResults = JSON.parse(responseString).map((entry) =&gt; {
-    const entityReference = {
-      '&amp;quot;': '"',
-      '&amp;amp;': '&amp;',
-      '&amp;apos;': "'",
-      '&amp;lt;': '&lt;',
-      '&amp;gt;': '&gt;',
-    }
-
-    return {
-      name: Object.keys(entityReference).reduce(
-        (acc, cur) =&gt; acc.replaceAll(cur, entityReference[cur]),
-        entry.item.replace(/(&lt;([^&gt;]+)&gt;)/gi, '')
-      ),
-      subtitle: entry.url,
-    }
-  })
-
-  return JSON.stringify({
-    skipknowledge: true,
-    variables: { oldResults: JSON.stringify(newResults), oldArgv: newArgv },
-    items: makeItems(argvToResults(argv).concat(newResults)),
-  })
-}
+				<string>osascript -l JavaScript hoogle.js "$@"
 </string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
@@ -162,7 +92,7 @@
 				<key>title</key>
 				<string>Search Hoogle</string>
 				<key>type</key>
-				<integer>7</integer>
+				<integer>0</integer>
 				<key>withspace</key>
 				<true/>
 			</dict>
@@ -226,7 +156,7 @@ Get in-line suggestions from Hoogle’s search results via the `hoogle` keyword 
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>2.0.0</string>
+	<string>2.0.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/satosystems/alfred-hoogle</string>
 </dict>
