@@ -12,11 +12,10 @@ function run(argv) {
 
   function argvToResults(argv) {
     const name = argv.join(' ')
-    const query = name.replaceAll(' ', '%20')
     return [
       {
         name: name,
-        subtitle: `https://hoogle.haskell.org/?hoogle=${query}`,
+        subtitle: `https://hoogle.haskell.org/?hoogle=${name}`,
       },
     ]
   }
